@@ -64,35 +64,35 @@ categories: distribution system
 
   这个问题本身是根据 paxos 的前提给出的，但是我们也可以给出一些例子：比如现在有3个 acceptor 1，2，3；现在3个 acceptor 的行为分别是：
 
-  |acceptor 1| p10 | a10A | | | p12 | a12X |
-  |----------| --- |------|------|------|------|------|
-  |acceptor 2| p10 |  | p11 | a11B |  |
-  |acceptor 3| p10 |  | p11 | a11B | p12| a12X|
+|acceptor 1| p10 | a10A | | | p12 | a12X |
+|----------| --- |------|------|------|------|------|
+|acceptor 2| p10 |  | p11 | a11B |  |
+|acceptor 3| p10 |  | p11 | a11B | p12| a12X|
 
   上表中的 p 表示 prepare，a 表示 accept， 数组表示 seq 大写字母表示 v 。这种情况下如果 X 不是 B 的话，系统就会 choose 两个 v。 虽然这种情况只在B占大多数的情况下，但是我们通过返回值是无法判断这种情况的。所以我们只能选择一个 proposal 。
 - accept 时， acceptor 为什么要检查 seq？
   还是看例子：
 
-  |acceptor 1| p1 | p2 | a1A | a2B |
-  |----------| --- |------|------|------|
-  |acceptor 2| p1 | p2 | a1A |  |
-  |acceptor 3| p1 | p2 | N | a2B |
+|acceptor 1| p1 | p2 | a1A | a2B |
+|----------| --- |------|------|------|
+|acceptor 2| p1 | p2 | a1A |  |
+|acceptor 3| p1 | p2 |  | a2B |
 
   不检查的话，就会出现这种冲突
 - acceptor 挂了怎么办？
   acceptor 可以挂，但是必须可以恢复原状态。不然会出现下面的问题：
 
-  |acceptor 1| p1 | a1A |   | p2 |  |
-  |----------| --- |------|------|------|--|
-  |acceptor 2| p1 | a1A | reboot |  | a2X|
-  |acceptor 3| p1 | N | N  | p2 | a2X |
+|acceptor 1| p1 | a1A |   | p2 |  |
+|----------| --- |------|------|------|--|
+|acceptor 2| p1 | a1A | reboot |  | a2X|
+|acceptor 3| p1 |  |   | p2 | a2X |
 
   如果不能恢复，一致性问题无法保证。
 - 考虑这种情况：
 
-  acceptor 1| p1 | p2 | p3
-  ----------| ---|----|----
-  acceptor 2| p1 | p2 | p3 
+acceptor 1| p1 | p2 | p3
+----------| ---|----|----
+acceptor 2| p1 | p2 | p3
 
   即有2个 proposer, 循环提交 seq 这样的话，系统会陷入 live lock 的情况。解决方案就是下面的 leader
 
